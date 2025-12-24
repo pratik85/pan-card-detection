@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PAN Card Tampering Detection</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>PAN Card Tampering Detection</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="pan_image" required>
+        <button type="submit">Check PAN Card</button>
+    </form>
+
+    {% if result %}
+        <div class="result-container">
+            <div class="image-section">
+                {% if image_path %}
+                    <img src="/uploads/{{ image_path }}" alt="Uploaded PAN Card" class="pan-image">
+                {% endif %}
+            </div>
+            
+            <div class="score-card">
+                <h3 class="result-text">{{ result }}</h3>
+                <div class="score-section">
+                    <p class="score-label">Similarity Score</p>
+                    <p class="score-value">{{ score }}</p>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: {{ score * 100 }}%"></div>
+                    </div>
+                </div>
+                <p class="score-info">
+                    {% if score >= 0.85 %}
+                        Genuine PAN Card Detected
+                    {% else %}
+                        Potential Tampering Detected
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

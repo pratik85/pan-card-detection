@@ -1,17 +1,62 @@
-from flask import Flask, jsonify
+from flask import Flask, render_template, request, send_from_directory
+import cv2
+import numpy as np
+from skimage.metrics import structural_similarity as ssim
+from PIL import Image
+import os
 
 app = Flask(__name__)
+UPLOAD_FOLDER = "uploads"
+REFERENCE_IMAGE = "model/original_pan.jpg"
 
-@app.route("/")
-def home():
-    return "Flask App is running successfully on Windows 🚀"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route("/api/health")
-def health():
-    return jsonify({
-        "status": "OK",
-        "message": "Application is healthy"
-    })
+def preprocess_image(path):
+    image = cv2.imread(path)
+    if image is None:
+        return None
+    image = cv2.resize(image, (250, 160))
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    return gray
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    result = None
+    score = None
+    image_path = None
+
+    if request.method == "POST":
+        file = request.files["pan_image"]
+        if file:
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+            file.save(filepath)
+            image_path = file.filename
+
+            original = preprocess_image(REFERENCE_IMAGE)
+            uploaded = preprocess_image(filepath)
+
+            # Error handling for missing or invalid images
+            if original is None:
+                result = "❌ ERROR: Reference image not found or corrupted"
+            elif uploaded is None:
+                result = "❌ ERROR: Uploaded image is corrupted or invalid"
+            else:
+                score, diff = ssim(original, uploaded, full=True)
+                score = round(score, 4)
+                diff = (diff * 255).astype("uint8")
+
+                # Threshold logic (from your notebook understanding)
+                if score < 0.85:
+                    result = "❌ FAKE / TAMPERED PAN CARD"
+                else:
+                    result = "✅ GENUINE PAN CARD"
+
+    return render_template("index.html", result=result, score=score, image_path=image_path)
+
+@app.route("/uploads/<filename>")
+def serve_upload(filename):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 if __name__ == "__main__":
     app.run(debug=True)

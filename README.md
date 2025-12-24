@@ -32,3 +32,32 @@ http://127.0.0.1:5000/api/health
 
 ## Stop Server
 Press CTRL + C
+
+# Folder Structure
+
+pan_tampering_app/
+│
+├── app.py
+├── model/
+│   └── original_pan.jpg        # genuine PAN template
+│
+├── static/
+│   ├── styles.css
+│
+├── templates/
+│   └── index.html
+│
+├── uploads/
+│
+├── requirements.txt
+└── README.md
+
+# How to Run (Windows)
+
+```bash
+cd pan_tampering_app
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
