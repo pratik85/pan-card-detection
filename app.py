@@ -7,7 +7,9 @@ import os
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
-REFERENCE_IMAGE = "model/original_pan.jpg"
+# Use absolute path for reference image
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REFERENCE_IMAGE = os.path.join(BASE_DIR, "model", "original_pan.jpg")
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -38,19 +40,22 @@ def index():
 
             # Error handling for missing or invalid images
             if original is None:
-                result = "❌ ERROR: Reference image not found or corrupted"
+                result = f"ERROR: Reference image not found at {REFERENCE_IMAGE}"
             elif uploaded is None:
-                result = "❌ ERROR: Uploaded image is corrupted or invalid"
+                result = "ERROR: Uploaded image is corrupted or invalid"
             else:
-                score, diff = ssim(original, uploaded, full=True)
-                score = round(score, 4)
-                diff = (diff * 255).astype("uint8")
+                try:
+                    score, diff = ssim(original, uploaded, full=True)
+                    score = round(score, 4)
+                    diff = (diff * 255).astype("uint8")
 
-                # Threshold logic (from your notebook understanding)
-                if score < 0.85:
-                    result = "❌ FAKE / TAMPERED PAN CARD"
-                else:
-                    result = "✅ GENUINE PAN CARD"
+                    # Threshold logic (from your notebook understanding)
+                    if score < 0.85:
+                        result = "FAKE / TAMPERED PAN CARD"
+                    else:
+                        result = "GENUINE PAN CARD"
+                except Exception as e:
+                    result = f"ERROR: {str(e)}"
 
     return render_template("index.html", result=result, score=score, image_path=image_path)
 
